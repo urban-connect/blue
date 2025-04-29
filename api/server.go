@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"tinygo.org/x/bluetooth"
@@ -151,6 +152,84 @@ func (server *Server) GetDevice(w http.ResponseWriter, r *http.Request) {
 
 	server.RespondWith(w, http.StatusOK, map[string]interface{}{
 		"discovered_services": discoveredServices,
+	})
+}
+
+func (server *Server) WriteCharacteristic(w http.ResponseWriter, r *http.Request) {
+	bleDevice, found := server.store.Get(r.PathValue("device_id"))
+
+	if !found {
+		server.RespondWithError(
+			w,
+			http.StatusNotFound,
+			fmt.Errorf("device not found: %s", r.PathValue("device_id")),
+		)
+
+		return
+	}
+
+	serviceUUID, err := bluetooth.ParseUUID(r.PathValue("service_uuid"))
+
+	if err != nil {
+		server.RespondWithError(
+			w,
+			http.StatusUnprocessableEntity,
+			fmt.Errorf("invalid service uuid: %s", r.PathValue("service_uuid")),
+		)
+
+		return
+	}
+
+	charUUID, err := bluetooth.ParseUUID(r.PathValue("char_uuid"))
+
+	if err != nil {
+		server.RespondWithError(
+			w,
+			http.StatusUnprocessableEntity,
+			fmt.Errorf("invalid characteristic uuid: %s", r.PathValue("char_uuid")),
+		)
+
+		return
+	}
+
+	data, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		server.RespondWithError(
+			w,
+			http.StatusUnprocessableEntity,
+			fmt.Errorf("failed to read body: %w", err),
+		)
+
+		return
+	}
+
+	connection, err := discovery.Connect(bleDevice)
+
+	if err != nil {
+		server.RespondWithError(
+			w,
+			http.StatusInternalServerError,
+			fmt.Errorf("failed to connect: %w", err),
+		)
+
+		return
+	}
+
+	defer connection.Disconnect()
+
+	if err := connection.Write(serviceUUID, charUUID, data); err != nil {
+		server.RespondWithError(
+			w,
+			http.StatusInternalServerError,
+			fmt.Errorf("failed to write: %w", err),
+		)
+
+		return
+	}
+
+	server.RespondWith(w, http.StatusOK, map[string]interface{}{
+		"data": data,
 	})
 }
 

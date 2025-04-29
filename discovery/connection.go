@@ -13,6 +13,32 @@ type Connection struct {
 	bleDevice bluetooth.Device
 }
 
+func (connection *Connection) Write(serviceUUID bluetooth.UUID, charUUID bluetooth.UUID, data []byte) error {
+	services, err := connection.bleDevice.DiscoverServices([]bluetooth.UUID{
+		serviceUUID,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to find service: %w", err)
+	}
+
+	chars, err := services[0].DiscoverCharacteristics([]bluetooth.UUID{
+		charUUID,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to find characteristic: %w", err)
+	}
+
+	_, err = chars[0].Write(data)
+
+	if err != nil {
+		return fmt.Errorf("failed to write data: %w", err)
+	}
+
+	return nil
+}
+
 func (connection *Connection) Read(serviceUUID bluetooth.UUID, charUUID bluetooth.UUID) ([]byte, error) {
 	services, err := connection.bleDevice.DiscoverServices([]bluetooth.UUID{
 		serviceUUID,

@@ -17,6 +17,11 @@ func (server *Server) drawRoutes() {
 	)
 
 	server.router.HandleFunc(
+		"POST /devices/{device_id}/services/{service_uuid}/characteristics/{char_uuid}",
+		server.WriteCharacteristic,
+	)
+
+	server.router.HandleFunc(
 		"POST /start",
 		server.StartScan,
 	)
