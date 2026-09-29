@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"tinygo.org/x/bluetooth"
 	"urban-connect.ch/blue/api"
@@ -35,9 +36,16 @@ func main() {
 	}()
 
 	go func() {
-		fmt.Println("Starting server on :8080...")
+		fmt.Println("Starting server on 127.0.0.1:8080...")
 
-		if err := http.ListenAndServe(":8080", server); err != nil {
+		httpServer := &http.Server{
+			Addr:              "127.0.0.1:8080",
+			Handler:           server,
+			ReadHeaderTimeout: 10 * time.Second,
+			IdleTimeout:       120 * time.Second,
+		}
+
+		if err := httpServer.ListenAndServe(); err != nil {
 			fmt.Printf("Failed to start the server: %v\n", err)
 		}
 
