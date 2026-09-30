@@ -6,7 +6,7 @@ Blue is a little service we built to test BLE devices. It helps you to access BL
 
 Blue is written in Go and has very little amount of dependencies only necessary for service to work. Obviously, you can only run Blue on the computer which has active Bluetooth device.
 
-In order to build and run Blue you need Go >= 1.22.0. At least, we used this one to develop it. If you have it just run the following:
+In order to build and run Blue you need Go >= 1.26.0, the version go.mod requires. If you have it just run the following:
 
 ```shell script
 go run main.go
